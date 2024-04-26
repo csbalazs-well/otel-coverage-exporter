@@ -1,0 +1,22 @@
+name: Otel Coverage Exporter
+author: Csaba Balazs
+description: Parses jest coverage reports and send results to Grafana
+branding:
+  icon: "upload-cloud"
+  color: "blue"
+
+inputs:
+  github-token:
+    description: The GitHub token used to create an authenticated client
+    default: ${{ github.token }}
+    required: false
+  service-name:
+    description: Name of the service that the report was generated for
+    required: true
+  coverage-folder:
+    description: Name of the folder where the coverage was generated
+    required: true
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
