@@ -11,12 +11,11 @@ import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
-const OTEL_COLLECTOR_URL = 'http://otel-gateway-collector-opentelemetry-collector.observability.svc:4318/v1/metrics';
-// TODO make it work for Gluteus
+const SUMMARY_FILE_NAME = 'coverage-summary.json';
+var OTEL_COLLECTOR_URL = '';
+var RUNNER_ROOT = '/home/runner/work'
+var CODEOWNERS_TEAM_PREFIX = '';
 
-// const RUNNER_ROOT_PATH = '/home/runner/work/Maximus/Maximus/';
-const RUNNER_ROOT = '/home/runner/work'
-var SERVICE = '';
 
 // TODO is this needed?
 // originally we created the histogram object
@@ -41,6 +40,9 @@ interface Input {
   token: string;
   serviceName: string;
   coverageFolder: string;
+  otelCollectorUrl: string;
+  runnerRoot: string;
+  codeOwnersTeamPrefix: string;
 }
 
 type Summary = {
@@ -48,7 +50,7 @@ type Summary = {
   summary: any;
 };
 
-const CODEOWNERS_TEAM_PREFIX = '@wellhealthinc/';
+// move this inside the getOwnerTeam funtion ?
 const codeOwners = parse(fs.readFileSync('CODEOWNERS', { encoding: 'utf8', flag: 'r' }));
 
 export function getOwnerTeam(path) {
@@ -66,7 +68,6 @@ export function getOwnerTeam(path) {
   return 'UNOWNED';
 }
 
-const SUMMARY_FILE_NAME = 'coverage-summary.json';
 
 export function getCoverageSummaries(coverageFolder :string): Summary[] {
   const files = glob.sync(coverageFolder + '**/' + SUMMARY_FILE_NAME, {});
@@ -129,7 +130,7 @@ export function initExporter(serviceName: string): void {
 export function recordAllCoverages(summary) {
   Object.keys(summary).forEach((key) => {
     if (key !== 'total') {
-      const path = key.replace(`${RUNNER_ROOT}/${SERVICE}/${SERVICE}/`, '');
+      const path = key.replace(RUNNER_ROOT, '');
       recordCoveragesForPath(summary[key], {
         coverage_path: path,
         owner_team: getOwnerTeam(path),
@@ -208,7 +209,9 @@ export function getInputs(): Input {
 const run = async (): Promise<void> => {
     try {
       const input = getInputs();
-      SERVICE = input.serviceName;
+      OTEL_COLLECTOR_URL = input.otelCollectorUrl;
+      RUNNER_ROOT = input.runnerRoot;
+      CODEOWNERS_TEAM_PREFIX = input.codeOwnersTeamPrefix;
       return runAction(input);
     } catch (error) {
       core.startGroup(error instanceof Error ? error.message : JSON.stringify(error));

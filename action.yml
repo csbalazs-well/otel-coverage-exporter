@@ -16,7 +16,15 @@ inputs:
   coverage-folder:
     description: Name of the folder where the coverage was generated
     required: true
-
+  otel-collector-url:
+    description: ""
+    required: true
+  runner-root:
+    description: ""
+    required: true
+  codeowners-team-prefix:
+    description: ""
+    required: true
 runs:
   using: "node20"
   main: "dist/index.js"
