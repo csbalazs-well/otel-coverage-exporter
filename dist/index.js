@@ -73493,18 +73493,15 @@ const sdk_metrics_1 = __nccwpck_require__(67349);
 const resources_1 = __nccwpck_require__(3871);
 const semantic_conventions_1 = __nccwpck_require__(67275);
 const SUMMARY_FILE_NAME = 'coverage-summary.json';
-var OTEL_COLLECTOR_URL = '';
-var RUNNER_ROOT = '';
-var CODEOWNERS_TEAM_PREFIX = '';
 const histogram = {};
 const codeOwners = (0, codeowners_utils_1.parse)(fs.readFileSync('CODEOWNERS', { encoding: 'utf8', flag: 'r' }));
-function getOwnerTeam(path) {
+function getOwnerTeam(path, codeOwnersTeamPrefix) {
     if (path !== '') {
         const entry = (0, codeowners_utils_1.matchFile)(path, codeOwners);
         if (entry) {
-            const team = entry.owners.find((e) => e.startsWith(CODEOWNERS_TEAM_PREFIX));
+            const team = entry.owners.find((e) => e.startsWith(codeOwnersTeamPrefix));
             if (team) {
-                return team.replace(CODEOWNERS_TEAM_PREFIX, '');
+                return team.replace(codeOwnersTeamPrefix, '');
             }
         }
     }
@@ -73534,13 +73531,13 @@ exports.getCoverageSummaries = getCoverageSummaries;
 function hasCoverageData(summary) {
     return summary.total.lines.pct !== 'Unknown';
 }
-function initExporter(serviceName) {
+function initExporter(serviceName, otelCollectorUrl) {
     api_1.diag.setLogger(new api_1.DiagConsoleLogger(), api_1.DiagLogLevel.ALL);
     const meterProvider = new sdk_metrics_1.MeterProvider({
         readers: [
             new sdk_metrics_1.PeriodicExportingMetricReader({
                 exporter: new exporter_metrics_otlp_http_1.OTLPMetricExporter({
-                    url: OTEL_COLLECTOR_URL,
+                    url: otelCollectorUrl,
                 }),
                 exportIntervalMillis: 1000,
             }),
@@ -73562,13 +73559,13 @@ function initExporter(serviceName) {
     });
 }
 exports.initExporter = initExporter;
-function recordAllCoverages(summary) {
+function recordAllCoverages(summary, runnerRoot, codeOwnersTeamPrefix) {
     Object.keys(summary).forEach((key) => {
         if (key !== 'total') {
-            const path = key.replace(RUNNER_ROOT, '');
+            const path = key.replace(runnerRoot, '');
             recordCoveragesForPath(summary[key], {
                 coverage_path: path,
-                owner_team: getOwnerTeam(path),
+                owner_team: getOwnerTeam(path, codeOwnersTeamPrefix),
                 application_name: getApplicationName(path),
             });
         }
@@ -73617,12 +73614,12 @@ function getInputs() {
 }
 exports.getInputs = getInputs;
 const runAction = (input) => __awaiter(void 0, void 0, void 0, function* () {
-    initExporter(input.serviceName);
+    initExporter(input.serviceName, input.otelCollectorUrl);
     console.log('Meter provider created, recording coverage');
     const summaries = getCoverageSummaries(input.coverageFolder);
     summaries.forEach((summary) => {
         console.log(`Processing file. Path: ${summary.path}`);
-        recordAllCoverages(summary.summary);
+        recordAllCoverages(summary.summary, input.runnerRoot, input.codeOwnersTeamPrefix);
     });
     console.log('Coverage recorded');
     shutdownExporter();
@@ -73631,9 +73628,6 @@ exports.runAction = runAction;
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const input = getInputs();
-        OTEL_COLLECTOR_URL = input.otelCollectorUrl;
-        RUNNER_ROOT = input.runnerRoot;
-        CODEOWNERS_TEAM_PREFIX = input.codeOwnersTeamPrefix;
         return (0, exports.runAction)(input);
     }
     catch (error) {

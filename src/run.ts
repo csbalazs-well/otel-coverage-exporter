@@ -1,8 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-// import * as glob from "@actions/glob";
 import { glob } from 'glob';
-
 import { parse, matchFile } from 'codeowners-utils';
 import * as fs from 'fs';
 import { DiagConsoleLogger, DiagLogLevel, diag, metrics } from '@opentelemetry/api';
@@ -12,9 +10,6 @@ import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 const SUMMARY_FILE_NAME = 'coverage-summary.json';
-var OTEL_COLLECTOR_URL = '';
-var RUNNER_ROOT = ''
-var CODEOWNERS_TEAM_PREFIX = '';
 
 type Histrogram = {
   pct: any;
@@ -24,7 +19,6 @@ type Histrogram = {
 };
 
 const histogram = {} as Histrogram;
-
 
 interface Input {
   token: string;
@@ -43,14 +37,14 @@ type Summary = {
 // move this inside the getOwnerTeam funtion ?
 const codeOwners = parse(fs.readFileSync('CODEOWNERS', { encoding: 'utf8', flag: 'r' }));
 
-export function getOwnerTeam(path) {
+export function getOwnerTeam(path: string, codeOwnersTeamPrefix :string) {
   if (path !== '') {
     const entry = matchFile(path, codeOwners);
     if (entry) {
-      const team = entry.owners.find((e) => e.startsWith(CODEOWNERS_TEAM_PREFIX));
+      const team = entry.owners.find((e) => e.startsWith(codeOwnersTeamPrefix));
 
       if (team) {
-        return team.replace(CODEOWNERS_TEAM_PREFIX, '');
+        return team.replace(codeOwnersTeamPrefix, '');
       }
     }
   }
@@ -83,14 +77,14 @@ function hasCoverageData(summary) {
   return summary.total.lines.pct !== 'Unknown';
 }
 
-export function initExporter(serviceName: string): void {
+export function initExporter(serviceName: string, otelCollectorUrl: string): void {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ALL);
 
   const meterProvider = new MeterProvider({
     readers: [
       new PeriodicExportingMetricReader({
         exporter: new OTLPMetricExporter({
-          url: OTEL_COLLECTOR_URL,
+          url: otelCollectorUrl,
         }),
         exportIntervalMillis: 1000,
       }),
@@ -117,13 +111,13 @@ export function initExporter(serviceName: string): void {
   // });
 }
 
-export function recordAllCoverages(summary) {
+export function recordAllCoverages(summary: any, runnerRoot: string, codeOwnersTeamPrefix: string) {
   Object.keys(summary).forEach((key) => {
     if (key !== 'total') {
-      const path = key.replace(RUNNER_ROOT, '');
+      const path = key.replace(runnerRoot, '');
       recordCoveragesForPath(summary[key], {
         coverage_path: path,
-        owner_team: getOwnerTeam(path),
+        owner_team: getOwnerTeam(path, codeOwnersTeamPrefix),
         application_name: getApplicationName(path),
       });
     }
@@ -178,14 +172,14 @@ export function getInputs(): Input {
   }
 
   export const runAction = async (input: Input): Promise<void> => {
-    initExporter(input.serviceName);
+    initExporter(input.serviceName, input.otelCollectorUrl);
     console.log('Meter provider created, recording coverage');
 
     const summaries = getCoverageSummaries(input.coverageFolder);
 
     summaries.forEach((summary) => {
       console.log(`Processing file. Path: ${summary.path}`);
-      recordAllCoverages(summary.summary);
+      recordAllCoverages(summary.summary, input.runnerRoot, input.codeOwnersTeamPrefix);
     });
 
     console.log('Coverage recorded');
@@ -197,9 +191,6 @@ export function getInputs(): Input {
 const run = async (): Promise<void> => {
     try {
       const input = getInputs();
-      OTEL_COLLECTOR_URL = input.otelCollectorUrl;
-      RUNNER_ROOT = input.runnerRoot;
-      CODEOWNERS_TEAM_PREFIX = input.codeOwnersTeamPrefix;
       return runAction(input);
     } catch (error) {
       core.startGroup(error instanceof Error ? error.message : JSON.stringify(error));
