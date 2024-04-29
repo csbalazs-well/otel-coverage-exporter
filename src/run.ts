@@ -141,13 +141,9 @@ export function recordAllCoverages(summary) {
 }
 
 export function shutdownExporter() {
-  const meterProvider = metrics.getMeterProvider();
-  // I had to ignore these as these functions were not found on the MeterProvider
-  // Might worth investigation but it is working sooo... ¯\_(ツ)_/¯  
-  // @ts-ignore
+  const meterProvider = metrics.getMeterProvider() as MeterProvider;
   meterProvider.forceFlush().then(() => { 
     console.log('Meter provider flushed');
-     // @ts-ignore 
     meterProvider.shutdown().then(() => {
       console.log('Meter provider shut down');
     });
