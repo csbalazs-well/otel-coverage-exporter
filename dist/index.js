@@ -73494,7 +73494,7 @@ const resources_1 = __nccwpck_require__(3871);
 const semantic_conventions_1 = __nccwpck_require__(67275);
 const SUMMARY_FILE_NAME = 'coverage-summary.json';
 var OTEL_COLLECTOR_URL = '';
-var RUNNER_ROOT = '/home/runner/work';
+var RUNNER_ROOT = '';
 var CODEOWNERS_TEAM_PREFIX = '';
 const histogram = {};
 const codeOwners = (0, codeowners_utils_1.parse)(fs.readFileSync('CODEOWNERS', { encoding: 'utf8', flag: 'r' }));
@@ -73519,7 +73519,8 @@ function getCoverageSummaries(coverageFolder) {
     }
     else {
         files.forEach((path) => {
-            const summary = JSON.parse(fs.readFileSync('./' + path, 'utf-8'));
+            const summary = {};
+            summary.summary = JSON.parse(fs.readFileSync('./' + path, 'utf-8'));
             if (hasCoverageData(summary)) {
                 summaries.push({ summary, path });
             }
@@ -73610,6 +73611,9 @@ function getInputs() {
     result.token = core.getInput('github-token');
     result.serviceName = core.getInput('service-name');
     result.coverageFolder = core.getInput('coverage-folder');
+    result.otelCollectorUrl = core.getInput('otel-collector-url');
+    result.runnerRoot = core.getInput('runner-root');
+    result.codeOwnersTeamPrefix = core.getInput('codeowners-team-prefix');
     return result;
 }
 exports.getInputs = getInputs;

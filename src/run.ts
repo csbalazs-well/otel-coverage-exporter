@@ -13,25 +13,15 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 const SUMMARY_FILE_NAME = 'coverage-summary.json';
 var OTEL_COLLECTOR_URL = '';
-var RUNNER_ROOT = '/home/runner/work'
+var RUNNER_ROOT = ''
 var CODEOWNERS_TEAM_PREFIX = '';
 
-
-// TODO is this needed?
-// originally we created the histogram object
 type Histrogram = {
   pct: any;
   total: any;
   covered: any;
   // skipped: any;
 };
-
-// const histograms = {
-//   pct: null,
-//   total: null,
-//   covered: null,
-//   // skipped: null,
-// };
 
 const histogram = {} as Histrogram;
 
@@ -77,7 +67,8 @@ export function getCoverageSummaries(coverageFolder :string): Summary[] {
     console.error('No summary files found.');
   } else {
     files.forEach((path) => {
-      const summary: Summary = JSON.parse(fs.readFileSync('./' + path, 'utf-8'));
+      const summary = {} as Summary;
+      summary.summary = JSON.parse(fs.readFileSync('./' + path, 'utf-8'));
       if (hasCoverageData(summary)) {
         summaries.push({ summary, path });
       } else {
@@ -162,7 +153,6 @@ function recordCoveragesForPath(coverages, attributes) {
   recordSingle(coverages.branches, { ...attributes, coverage_type: 'branches' });
 }
 
-// This is probably only for Maximus
 function getApplicationName(path) {
   if (path != '') {
     let pathWithoutApps = path.indexOf('apps/') !== -1 ? path.replace('apps/', '') : path;
@@ -173,7 +163,7 @@ function getApplicationName(path) {
 }
 
 
-// --------------------------------------- Action  ---------------------------------------
+// --------------------------------------- Action ----------------------------------------
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
 
@@ -182,6 +172,9 @@ export function getInputs(): Input {
     result.token = core.getInput('github-token');
     result.serviceName = core.getInput('service-name');
     result.coverageFolder = core.getInput('coverage-folder')
+    result.otelCollectorUrl = core.getInput('otel-collector-url');
+    result.runnerRoot = core.getInput('runner-root');
+    result.codeOwnersTeamPrefix = core.getInput('codeowners-team-prefix');
     return result;
   }
 
