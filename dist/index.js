@@ -73496,7 +73496,7 @@ const SUMMARY_FILE_NAME = 'coverage-summary.json';
 var OTEL_COLLECTOR_URL = '';
 var RUNNER_ROOT = '/home/runner/work';
 var CODEOWNERS_TEAM_PREFIX = '';
-var histogram;
+const histogram = {};
 const codeOwners = (0, codeowners_utils_1.parse)(fs.readFileSync('CODEOWNERS', { encoding: 'utf8', flag: 'r' }));
 function getOwnerTeam(path) {
     if (path !== '') {

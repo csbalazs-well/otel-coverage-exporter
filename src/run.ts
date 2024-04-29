@@ -33,7 +33,7 @@ type Histrogram = {
 //   // skipped: null,
 // };
 
-var histogram: Histrogram;
+const histogram = {} as Histrogram;
 
 
 interface Input {
