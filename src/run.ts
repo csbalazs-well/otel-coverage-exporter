@@ -67,8 +67,7 @@ export function getCoverageSummaries(coverageFolder :string): Summary[] {
     console.error('No summary files found.');
   } else {
     files.forEach((path) => {
-      const summary = {} as Summary;
-      summary.summary = JSON.parse(fs.readFileSync('./' + path, 'utf-8'));
+      const summary = JSON.parse(fs.readFileSync('./' + path, 'utf-8'));
       if (hasCoverageData(summary)) {
         summaries.push({ summary, path });
       } else {

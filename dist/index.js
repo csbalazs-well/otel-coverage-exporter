@@ -73519,8 +73519,7 @@ function getCoverageSummaries(coverageFolder) {
     }
     else {
         files.forEach((path) => {
-            const summary = {};
-            summary.summary = JSON.parse(fs.readFileSync('./' + path, 'utf-8'));
+            const summary = JSON.parse(fs.readFileSync('./' + path, 'utf-8'));
             if (hasCoverageData(summary)) {
                 summaries.push({ summary, path });
             }
